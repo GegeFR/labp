@@ -9,6 +9,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
+        <akka.version>2.3.7</akka.version>
     </properties>
     
     
@@ -29,24 +30,24 @@
             <artifactId>gson</artifactId>
             <version>2.2.4</version>
         </dependency>
-        
+
         <!-- provided dependencies (already in akka micro-kernel) -->
         <dependency>
             <groupId>com.typesafe.akka</groupId>
             <artifactId>akka-cluster_2.11</artifactId>
-            <version>2.3.4</version>
+            <version>${akka.version}</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>com.typesafe.akka</groupId>
             <artifactId>akka-contrib_2.11</artifactId>
-            <version>2.3.4</version>
+            <version>${akka.version}</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>com.typesafe.akka</groupId>
             <artifactId>akka-kernel_2.11</artifactId>
-            <version>2.3.4</version>
+            <version>${akka.version}</version>
             <scope>provided</scope>
         </dependency>
     </dependencies>

@@ -25,9 +25,8 @@ public class Bootstrap implements Bootable {
     public void startup() {
         try {
             ClusterServicesRegistry.initInstance(system);
-            
+
             // create local actors according to local node role
-            
             if (AkkaUtils.myRole(system, Constants.ROLE_LUA)) {
                 ActorRef ref = system.actorOf(Props.create(LUAService.class), "LUAService");
                 log.info("created actor " + ref);
@@ -43,7 +42,7 @@ public class Bootstrap implements Bootable {
                 ActorRef ref = system.actorOf(Props.create(WUIActor.class), "WUIService");
                 log.info("created actor " + ref);
             }
-            
+
             // create an actor that handles cluster domain events then add subscription of cluster events
             ActorRef clusterListener = system.actorOf(Props.create(ClusterService.class), "ClusterService");
             Cluster.get(system).subscribe(clusterListener, ClusterDomainEvent.class);

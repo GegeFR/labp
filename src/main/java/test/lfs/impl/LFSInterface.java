@@ -10,6 +10,7 @@ package test.lfs.impl;
  * @author Gwen
  */
 public interface LFSInterface {
+
     public String getName();
 
     public String[] list(String path, boolean recurse) throws Exception;

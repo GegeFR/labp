@@ -20,7 +20,7 @@ public class Stats implements Serializable {
         this.freeMem = freeMem;
         this.usedMem = usedMem;
     }
-    
+
     public static Stats create(long freeMem, long usedMem) {
         return new Stats(freeMem, usedMem);
     }

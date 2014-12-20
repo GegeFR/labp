@@ -30,11 +30,11 @@ public class LFSList implements Serializable {
     public static LFSList create(String path, Boolean recurse) {
         return new LFSList(null, null, path, null, recurse);
     }
-    
+
     public static LFSList create(String callback, String context, String path, String layer, Boolean recurse) {
         return new LFSList(callback, context, path, layer, recurse);
     }
-    
+
     public Response createResponse(String[] paths, Throwable throwable) {
         return new Response(this, paths, throwable);
     }

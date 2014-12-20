@@ -18,7 +18,6 @@ import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicLong;
 import scala.PartialFunction;
 import test.Constants;
-import test.lfs.msg.wui.LFSLayers;
 import test.lua.impl.WrappedGlobalsPool;
 import test.lua.msg.LUAStart;
 
@@ -83,7 +82,7 @@ public class LUAService extends AbstractActor {
     @Override
     public void preStart() {
         _distPubSubMediator = DistributedPubSubExtension.get(getContext().system()).mediator();
-        
+
         if (null == WrappedGlobalsPool.instance()) {
             WrappedGlobalsPool.init(getContext().system());
         }
@@ -94,12 +93,12 @@ public class LUAService extends AbstractActor {
         return ReceiveBuilder.match(LUAStart.class, m -> {
             log.warning("received " + m.getClass());
             try {
-                String name = m.name + "#" + Long.toString(id.incrementAndGet());
+                String name = m.name + "$" + Long.toString(id.incrementAndGet());
                 ActorRef worker = getContext().system().actorOf(Props.create(LUAWorker.class, m.shared, m.path), name);
                 context().watch(worker);
                 worker.tell(m, worker);
                 increment(name);
-                
+
                 _distPubSubMediator.tell(new DistributedPubSubMediator.Publish(Constants.TOPIC_WUI, null), self());
             }
             catch (Exception e) {

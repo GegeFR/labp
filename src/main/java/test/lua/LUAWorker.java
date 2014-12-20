@@ -40,7 +40,7 @@ public class LUAWorker extends AbstractActor {
         else {
             _shared = shared;
         }
-        
+
         _path = path;
 
         if (_shared) {

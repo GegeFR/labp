@@ -22,12 +22,13 @@ import test.lfs.msg.core.LFSGet;
  * @author Gwen
  */
 public class LUAResourceFinder implements ResourceFinder {
-    private final LoggingAdapter log; 
+
+    private final LoggingAdapter log;
 
     public LUAResourceFinder(ActorSystem system) {
         log = Logging.getLogger(system, this.getClass());
         log.debug("LUAResourceFinder initialized");
-        
+
     }
 
     @Override

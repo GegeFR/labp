@@ -12,8 +12,8 @@ import java.io.Serializable;
  * @author Gwen
  */
 public class LFSAskToPublish implements Serializable {
-    
-    public static LFSAskToPublish create(){
+
+    public static LFSAskToPublish create() {
         return new LFSAskToPublish();
     }
 }

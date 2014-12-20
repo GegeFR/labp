@@ -80,19 +80,19 @@ public class LayeredFileSystem implements LFSInterface {
     public synchronized void up(String name) {
         int index = findIndexIn(_activeLayers, name);
         if (index != -1) {
-            if(index > 0){
+            if (index > 0) {
                 Collections.swap(_activeLayers, index, index - 1);
             }
         }
     }
-    
+
     public synchronized void down(String name) {
         int index = findIndexIn(_activeLayers, name);
-                _log.info("_activeLayers.size()="+_activeLayers.size());
-                _log.info("name)="+name);
-                _log.info("index="+index);
+        _log.info("_activeLayers.size()=" + _activeLayers.size());
+        _log.info("name)=" + name);
+        _log.info("index=" + index);
         if (index != -1) {
-            if(index < _activeLayers.size() - 1){
+            if (index < _activeLayers.size() - 1) {
                 Collections.swap(_activeLayers, index, index + 1);
             }
         }

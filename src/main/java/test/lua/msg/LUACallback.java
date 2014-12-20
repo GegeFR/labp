@@ -24,7 +24,7 @@ public class LUACallback implements Serializable {
     public static LUACallback create(Long id, Boolean remove) {
         return new LUACallback(id, remove);
     }
-    
+
     public static LUACallback create(Long id) {
         return new LUACallback(id, true);
     }

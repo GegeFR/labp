@@ -24,15 +24,15 @@ public class LFSGet implements Serializable {
         this.path = path;
         this.layer = layer;
     }
-    
+
     public static LFSGet create(String path) {
         return new LFSGet(null, null, path, null);
     }
-    
+
     public static LFSGet create(String callback, String context, String path, String layer) {
         return new LFSGet(callback, context, path, layer);
     }
-    
+
     public Response createResponse(byte[] bytes, Throwable throwable) {
         return new Response(this, bytes, throwable);
     }

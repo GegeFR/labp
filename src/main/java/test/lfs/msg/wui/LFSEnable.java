@@ -12,8 +12,9 @@ import java.io.Serializable;
  * @author Gwen
  */
 public class LFSEnable implements Serializable {
+
     public final String layer;
-    
+
     private LFSEnable(String layer) {
         this.layer = layer;
     }

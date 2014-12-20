@@ -15,16 +15,17 @@ public class Ping implements Serializable {
 
     private Ping() {
     }
-    
+
     public static Ping create() {
         return new Ping();
     }
-    
+
     public Response createResponse() {
         return new Response(this);
     }
 
     public static class Response implements Serializable {
+
         public final Ping request;
 
         private Response(Ping request) {

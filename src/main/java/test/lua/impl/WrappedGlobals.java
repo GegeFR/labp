@@ -33,7 +33,7 @@ public class WrappedGlobals {
         _globals.finder = new LUAResourceFinder(_system);
         _mainChunk = _globals.loadfile(path);
     }
-    
+
     public String getPath() {
         return _path;
     }

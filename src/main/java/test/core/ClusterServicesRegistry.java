@@ -8,7 +8,6 @@ package test.core;
 import akka.actor.ActorSelection;
 import akka.actor.ActorSystem;
 import akka.actor.Address;
-import akka.cluster.Member;
 import akka.event.Logging;
 import akka.event.LoggingAdapter;
 import java.util.HashMap;
@@ -48,7 +47,7 @@ public class ClusterServicesRegistry {
 
     public synchronized void registerMember(Address member, Double weight) {
         if (!weightByMembers.containsKey(member)) {
-            log.info("register member " + member + " with weight " + weight);
+            log.debug("register member " + member + " with weight " + weight);
             weightByMembers.put(member, weight);
         }
         else {
@@ -59,14 +58,14 @@ public class ClusterServicesRegistry {
     public synchronized void updateMember(Address member, Double newWeight) {
         Double oldWeight = weightByMembers.get(member);
         if (null != oldWeight) {
-            log.info("update member " + member + " with weight " + newWeight);
+            log.debug("update member " + member + " with weight " + newWeight);
             weightByMembers.put(member, newWeight);
         }
         else {
             log.warning("tryed to update weight of non-registred member : ignored");
         }
     }
-    
+
     public synchronized void recomputeAll() {
         luaByMember.recompute();
         lfsByMember.recompute();
@@ -95,7 +94,7 @@ public class ClusterServicesRegistry {
     }
 
     public synchronized ActorSelection getService(String role) {
-        log.info("get for role " + role);
+        log.debug("get for role " + role);
         return mapByRole.get(role).get();
     }
 

@@ -36,7 +36,7 @@ public class LocalFileSystem implements LFSInterface {
         _root = root;
         _name = name;
     }
-    
+
     @Override
     public String getName() {
         return _name;
@@ -49,27 +49,27 @@ public class LocalFileSystem implements LFSInterface {
 
         LinkedList<File> results = new LinkedList();
         doList(file, results, recurse);
-        
+
         String[] result = new String[results.size()];
-        int j=0;
+        int j = 0;
         for (File child : results) {
             result[j++] = toInnerFS(_root, child.toURI(), child.isDirectory());
         }
-        
+
         return result;
     }
-    
+
     public void doList(File file, List<File> results, boolean recurse) {
         File[] children = file.listFiles();
 
         for (File child : children) {
             results.add(child);
-            if(recurse && child.isDirectory()){
+            if (recurse && child.isDirectory()) {
                 doList(child, results, recurse);
             }
         }
     }
-    
+
     @Override
     public byte[] get(String path) throws FileNotFoundException, IOException {
         File file = new File(toOuterFS(_root, path));
@@ -110,10 +110,10 @@ public class LocalFileSystem implements LFSInterface {
     }
 
     private String toInnerFS(URI root, URI outerURI, boolean isFolder) {
-        if(isFolder){
+        if (isFolder) {
             return "/" + root.relativize(outerURI).getPath() + "/";
         }
-        else{
+        else {
             return "/" + root.relativize(outerURI).getPath();
         }
     }

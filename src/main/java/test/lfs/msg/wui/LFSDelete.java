@@ -12,8 +12,9 @@ import java.io.Serializable;
  * @author Gwen
  */
 public class LFSDelete implements Serializable {
+
     public final String layer;
-    
+
     private LFSDelete(String layer) {
         this.layer = layer;
     }

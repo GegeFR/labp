@@ -50,7 +50,7 @@ public class LFSService extends AbstractActor {
     public PartialFunction receive() {
 
         return ReceiveBuilder.match(LFSGet.class, m -> {
-            log.warning("received " + m.getClass());
+            log.info("received " + m.getClass());
             try {
                 byte[] bytes = _filesystem.getLayer(m.layer).get(m.path);
                 sender().tell(m.createResponse(bytes, null), self());
@@ -59,7 +59,7 @@ public class LFSService extends AbstractActor {
                 sender().tell(m.createResponse(null, e), self());
             }
         }).match(LFSSet.class, m -> {
-            log.warning("received " + m.getClass());
+            log.info("received " + m.getClass());
 //            try {
 //                _filesystem.getLayer(m.layer).set(m.path, m.bytes);
 //                sender().tell(m.createResponse(null), self());
@@ -68,7 +68,7 @@ public class LFSService extends AbstractActor {
 //                sender().tell(m.createResponse(e), self());
 //            }
         }).match(LFSList.class, m -> {
-            log.warning("received " + m.getClass());
+            log.info("received " + m.getClass());
             try {
                 String[] paths = _filesystem.getLayer(m.layer).list(m.path, m.recurse);
                 sender().tell(m.createResponse(paths, null), self());
@@ -77,27 +77,27 @@ public class LFSService extends AbstractActor {
                 sender().tell(m.createResponse(null, e), self());
             }
         }).match(LFSAskToPublish.class, m -> {
-            log.warning("received " + m.getClass());
+            log.info("received " + m.getClass());
 
             doPublish();
         }).match(LFSUp.class, m -> {
-            log.warning("received " + m.getClass());
+            log.info("received " + m.getClass());
             _filesystem.up(m.layer);
             doPublish();
         }).match(LFSDown.class, m -> {
-            log.warning("received " + m.getClass());
+            log.info("received " + m.getClass());
             _filesystem.down(m.layer);
             doPublish();
         }).match(LFSEnable.class, m -> {
-            log.warning("received " + m.getClass());
+            log.info("received " + m.getClass());
             _filesystem.enable(m.layer);
             doPublish();
         }).match(LFSDisable.class, m -> {
-            log.warning("received " + m.getClass());
+            log.info("received " + m.getClass());
             _filesystem.disable(m.layer);
             doPublish();
         }).matchAny(m -> {
-            log.warning("received unsupported message " + m.getClass());
+            log.info("received unsupported message " + m.getClass());
         }).build();
     }
 

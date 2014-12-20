@@ -12,8 +12,9 @@ import java.io.Serializable;
  * @author Gwen
  */
 public class LFSDown implements Serializable {
+
     public final String layer;
-    
+
     private LFSDown(String layer) {
         this.layer = layer;
     }

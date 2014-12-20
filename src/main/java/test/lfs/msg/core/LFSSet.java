@@ -7,7 +7,6 @@ package test.lfs.msg.core;
 
 import java.io.Serializable;
 
-
 /**
  *
  * @author Gwen
