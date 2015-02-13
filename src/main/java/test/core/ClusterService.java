@@ -40,21 +40,21 @@ public class ClusterService extends UntypedActor {
     }
 
     @Override
-    public void onReceive(Object message) throws Exception {
-        log.debug("received " + message.getClass());
+    public void onReceive(Object m) throws Exception {
+        log.info(self() + " :: received class " + m.getClass());
 
-        if (message instanceof MemberUp) {
-            onReceive((MemberUp) message);
+        if (m instanceof MemberUp) {
+            onReceive((MemberUp) m);
         }
-        else if (message instanceof ClusterMetricsChanged) {
-            onReceive((ClusterMetricsChanged) message);
+        else if (m instanceof ClusterMetricsChanged) {
+            onReceive((ClusterMetricsChanged) m);
         }
         else {
-            log.debug("received unsupported message " + message.getClass());
+            log.debug("received unsupported message " + m.getClass());
         }
     }
 
-    public void onReceive(MemberUp m) throws Exception {
+    public void onReceive(MemberUp m) {
         try {
             Member member = m.member();
             Address address = member.address();
@@ -82,7 +82,7 @@ public class ClusterService extends UntypedActor {
 
     }
 
-    public void onReceive(ClusterMetricsChanged m) throws Exception {
+    public void onReceive(ClusterMetricsChanged m) {
         try {
             for (NodeMetrics nodeMetrics : m.getNodeMetrics()) {
                 Address address = nodeMetrics.address();
@@ -90,11 +90,11 @@ public class ClusterService extends UntypedActor {
                 double memoryUsed = nodeMetrics.metric("heap-memory-used").get().value().doubleValue();
                 double memoryMax = nodeMetrics.metric("heap-memory-max").get().value().doubleValue();
 
-                    // 0 if all used
+                // 0 if all used
                 // 1 if all free
                 double weight = 1 - (memoryUsed / memoryMax);
 
-                    //TODO : configurable thresholds
+                //TODO : configurable thresholds
                 // set to 0 (don't use node) if less than 20% available memory
                 if (weight < 0.2) {
                     log.warning("node has availability lower than 0.2: set to 0");

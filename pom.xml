@@ -60,6 +60,7 @@
                 <version>2.8</version>
                 <executions>
                     <execution>
+                        <!-- export all dependencies to copy them in akka to run -->
                         <id>copy-dependencies</id>
                         <phase>package</phase>
                         <goals>

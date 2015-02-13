@@ -5,7 +5,6 @@
  */
 package test.lua.impl.lib;
 
-import akka.actor.AbstractActor;
 import akka.actor.PoisonPill;
 import java.util.concurrent.TimeUnit;
 import org.luaj.vm2.LuaError;
@@ -16,6 +15,7 @@ import org.luaj.vm2.lib.TwoArgFunction;
 import org.luaj.vm2.lib.VarArgFunction;
 import org.luaj.vm2.lib.ZeroArgFunction;
 import scala.concurrent.duration.Duration;
+import test.lua.LUAWorker;
 import test.lua.impl.WrappedGlobals;
 import test.lua.msg.LUACallback;
 
@@ -23,11 +23,11 @@ import test.lua.msg.LUACallback;
  *
  * @author Gwen
  */
-public class LabpLib extends TwoArgFunction {
+public class Core extends TwoArgFunction {
 
     private final WrappedGlobals _wrapper;
 
-    public LabpLib(WrappedGlobals wrapper) {
+    public Core(WrappedGlobals wrapper) {
         _wrapper = wrapper;
     }
 
@@ -93,7 +93,7 @@ public class LabpLib extends TwoArgFunction {
 
         @Override
         public LuaValue call() {
-            AbstractActor actor = _wrapper.getAssociatedActor();
+            LUAWorker actor = _wrapper.getAssociatedActor();
             actor.self().tell(PoisonPill.getInstance(), actor.self());
             return LuaValue.NIL;
         }

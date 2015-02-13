@@ -7,6 +7,7 @@ package test.lfs;
 
 import akka.actor.AbstractActor;
 import akka.actor.ActorRef;
+import akka.actor.UntypedActor;
 import akka.contrib.pattern.DistributedPubSubExtension;
 import akka.contrib.pattern.DistributedPubSubMediator;
 import akka.event.Logging;
@@ -29,7 +30,7 @@ import test.lfs.msg.wui.LFSUp;
  *
  * @author Gwen
  */
-public class LFSService extends AbstractActor {
+public class LFSService extends UntypedActor {
 
     private final LoggingAdapter log = Logging.getLogger(getContext().system(), this.getClass());
 
@@ -47,58 +48,87 @@ public class LFSService extends AbstractActor {
     }
 
     @Override
-    public PartialFunction receive() {
+    public void onReceive(Object m) throws Exception {
+        log.info(self() + " :: received class " + m.getClass());
 
-        return ReceiveBuilder.match(LFSGet.class, m -> {
-            log.info("received " + m.getClass());
-            try {
-                byte[] bytes = _filesystem.getLayer(m.layer).get(m.path);
-                sender().tell(m.createResponse(bytes, null), self());
-            }
-            catch (Exception e) {
-                sender().tell(m.createResponse(null, e), self());
-            }
-        }).match(LFSSet.class, m -> {
-            log.info("received " + m.getClass());
-//            try {
-//                _filesystem.getLayer(m.layer).set(m.path, m.bytes);
-//                sender().tell(m.createResponse(null), self());
-//            }
-//            catch (Exception e) {
-//                sender().tell(m.createResponse(e), self());
-//            }
-        }).match(LFSList.class, m -> {
-            log.info("received " + m.getClass());
-            try {
-                String[] paths = _filesystem.getLayer(m.layer).list(m.path, m.recurse);
-                sender().tell(m.createResponse(paths, null), self());
-            }
-            catch (Exception e) {
-                sender().tell(m.createResponse(null, e), self());
-            }
-        }).match(LFSAskToPublish.class, m -> {
-            log.info("received " + m.getClass());
+        if (m instanceof LFSGet) {
+            onReceive((LFSGet) m);
+        }
+        else if (m instanceof LFSGet) {
+            onReceive((LFSGet) m);
+        }
+        else if (m instanceof LFSSet) {
+            onReceive((LFSSet) m);
+        }
+        else if (m instanceof LFSList) {
+            onReceive((LFSList) m);
+        }
+        else if (m instanceof LFSAskToPublish) {
+            onReceive((LFSAskToPublish) m);
+        }
+        else if (m instanceof LFSUp) {
+            onReceive((LFSUp) m);
+        }
+        else if (m instanceof LFSDown) {
+            onReceive((LFSDown) m);
+        }
+        else if (m instanceof LFSEnable) {
+            onReceive((LFSEnable) m);
+        }
+        else if (m instanceof LFSDisable) {
+            onReceive((LFSDisable) m);
+        }
+        else {
+            log.warning("received unsupported message " + m.getClass());
+        }
+    }
 
-            doPublish();
-        }).match(LFSUp.class, m -> {
-            log.info("received " + m.getClass());
-            _filesystem.up(m.layer);
-            doPublish();
-        }).match(LFSDown.class, m -> {
-            log.info("received " + m.getClass());
-            _filesystem.down(m.layer);
-            doPublish();
-        }).match(LFSEnable.class, m -> {
-            log.info("received " + m.getClass());
-            _filesystem.enable(m.layer);
-            doPublish();
-        }).match(LFSDisable.class, m -> {
-            log.info("received " + m.getClass());
-            _filesystem.disable(m.layer);
-            doPublish();
-        }).matchAny(m -> {
-            log.info("received unsupported message " + m.getClass());
-        }).build();
+    public void onReceive(LFSGet m) {
+        try {
+            byte[] bytes = _filesystem.getLayer(m.layer).get(m.path);
+            sender().tell(m.createResponse(bytes, null), self());
+        }
+        catch (Exception e) {
+            sender().tell(m.createResponse(null, e), self());
+        }
+    }
+
+    public void onReceive(LFSSet m) {
+
+    }
+
+    public void onReceive(LFSList m) {
+        try {
+            String[] paths = _filesystem.getLayer(m.layer).list(m.path, m.recurse);
+            sender().tell(m.createResponse(paths, null), self());
+        }
+        catch (Exception e) {
+            sender().tell(m.createResponse(null, e), self());
+        }
+    }
+
+    public void onReceive(LFSAskToPublish m) {
+        doPublish();
+    }
+
+    public void onReceive(LFSUp m) {
+        _filesystem.up(m.layer);
+        doPublish();
+    }
+
+    public void onReceive(LFSDown m) {
+        _filesystem.down(m.layer);
+        doPublish();
+    }
+
+    public void onReceive(LFSEnable m) {
+        _filesystem.enable(m.layer);
+        doPublish();
+    }
+
+    public void onReceive(LFSDisable m) {
+        _filesystem.disable(m.layer);
+        doPublish();
     }
 
     private void doPublish() {
@@ -106,4 +136,5 @@ public class LFSService extends AbstractActor {
         String[] inactive = _filesystem.getInactiveLayers();
         _distPubSubMediator.tell(new DistributedPubSubMediator.Publish(Constants.TOPIC_WUI, LFSLayers.create(active, inactive)), self());
     }
+
 }

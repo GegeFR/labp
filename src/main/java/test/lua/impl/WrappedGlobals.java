@@ -6,12 +6,11 @@
 package test.lua.impl;
 
 import akka.actor.ActorSystem;
-import java.util.concurrent.atomic.AtomicLong;
 import org.luaj.vm2.Globals;
 import org.luaj.vm2.LuaValue;
 import org.luaj.vm2.lib.jse.JsePlatform;
 import test.lua.LUAWorker;
-import test.lua.impl.lib.LabpLib;
+import test.lua.impl.lib.Core;
 
 /**
  *
@@ -29,7 +28,7 @@ public class WrappedGlobals {
         _path = path;
         _system = system;
         _globals = JsePlatform.standardGlobals();
-        _globals.load(new LabpLib(this));
+        _globals.load(new Core(this));
         _globals.finder = new LUAResourceFinder(_system);
         _mainChunk = _globals.loadfile(path);
     }

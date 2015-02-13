@@ -5,20 +5,18 @@
  */
 package test.wui;
 
-import akka.actor.AbstractActor;
 import akka.actor.ActorRef;
+import akka.actor.UntypedActor;
 import akka.contrib.pattern.DistributedPubSubExtension;
 import akka.contrib.pattern.DistributedPubSubMediator;
 import akka.event.Logging;
 import akka.event.LoggingAdapter;
-import akka.japi.pf.ReceiveBuilder;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.handler.HandlerList;
 import org.eclipse.jetty.server.handler.ResourceHandler;
 import org.eclipse.jetty.servlet.ServletHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
 import org.eclipse.jetty.util.resource.Resource;
-import scala.PartialFunction;
 import test.Constants;
 import test.lfs.msg.wui.LFSLayers;
 
@@ -26,7 +24,7 @@ import test.lfs.msg.wui.LFSLayers;
  *
  * @author Gwen
  */
-public class WUIActor extends AbstractActor {
+public class WUIActor extends UntypedActor {
 
     private final LoggingAdapter log = Logging.getLogger(getContext().system(), this.getClass());
     private WUIServlet _servlet;
@@ -62,12 +60,17 @@ public class WUIActor extends AbstractActor {
     }
 
     @Override
-    public PartialFunction receive() {
-        return ReceiveBuilder.match(LFSLayers.class, m -> {
-            log.info("received " + m.getClass());
-            _servlet.wasPublished(m);
-        }).matchAny(m -> {
+    public void onReceive(Object m) throws Exception {
+        log.info(self() + " :: received class " + m.getClass());
+        if (m instanceof LFSLayers) {
+            onReceive((LFSLayers) m);
+        }
+        else {
             log.warning("received unsupported message " + m.getClass());
-        }).build();
+        }
+    }
+
+    public void onReceive(LFSLayers m) {
+        _servlet.wasPublished(m);
     }
 }
