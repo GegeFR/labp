@@ -13,15 +13,15 @@ import java.io.Serializable;
  */
 public class LFSLayers implements Serializable {
 
-    public final String[] active;
-    public final String[] inactive;
+    public final String[] names;
+    public final boolean[] statuses;
 
-    private LFSLayers(String[] active, String[] inactive) {
-        this.active = active;
-        this.inactive = inactive;
+    private LFSLayers(String[] names, boolean[] statuses) {
+        this.names = names;
+        this.statuses = statuses;
     }
 
-    public static LFSLayers create(String[] active, String[] inactive) {
-        return new LFSLayers(active, inactive);
+    public static LFSLayers create(String[] names, boolean[] statuses) {
+        return new LFSLayers(names, statuses);
     }
 }

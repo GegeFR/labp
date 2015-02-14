@@ -26,7 +26,7 @@ public class Bootstrap implements Bootable {
         try {
             ClusterServicesRegistry.initInstance(system);
 
-            // create local actors according to local node role
+            // create local *service* actors according to local node role
             if (AkkaUtils.myRole(system, Constants.ROLE_LUA)) {
                 ActorRef ref = system.actorOf(Props.create(LUAService.class), "LUAService");
                 log.info("created actor " + ref);

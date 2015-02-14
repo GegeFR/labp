@@ -1,0 +1,93 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+    <head>
+        <title>layers</title>
+        <link type="text/css" rel="stylesheet" href="jquery-ui/jquery-ui.css" />
+
+        <script type="text/javascript" src="jquery-ui/external/jquery/jquery.js"></script>
+        <script type="text/javascript" src="jquery-ui/jquery-ui.js"></script>
+        <script type="text/javascript" src="utils.js"></script>
+
+
+        <style type="text/css">
+            body{ font: 62.5% "Trebuchet MS", sans-serif; }
+
+            #layers .ui-selected { background: #F39814; color: white; }
+            #layers { list-style-type: none; margin: 0; padding: 0; width: 100%; }
+            #layers li { margin: 3px; padding: 0.4em; font-size: 1.4em; height: 18px; }
+        </style>
+
+        <script type="text/javascript">
+            function createButton(icon, show, click) {
+                var button = document.createElement("button");
+                button.style.float = "right";
+                button.style.height = "100%";
+                if (!show) {
+                    button.style.visibility = "hidden";
+                }
+                $(button).button({
+                    icons: {
+                        primary: icon
+                    },
+                    text: false
+                }).click(click);
+                return button;
+            }
+
+            // filesystem
+            $(document).ready(function () {
+                // poller that receives lfs events
+                console.log("LFS polling started");
+                new Poll("api/test.lfs.msg.wui.LFSLayers", function (data) {
+                    // clear buttons
+                    var layers = document.getElementById("layers");
+                    domClean(layers);
+
+                    // recreate buttons
+                    console.log("will recreate buttons");
+                    var i = 0;
+                    for (var i in data.names) {
+                        var id = data.names[i];
+                        var status = data.statuses[i];
+                        console.log("id=" + id + ", status=" + status);
+                        var isDefault = id === "default";
+
+                        var li = document.createElement("li");
+                        li.id = id;
+                        if (status) {
+                            li.className = "ui-widget-content ui-selected";
+                        }
+                        else {
+                            li.className = "ui-widget-content";
+                        }
+                        li.appendChild(document.createTextNode(id));
+                        li.appendChild(createButton("ui-icon-folder-open", true, function () {
+
+                        }));
+                        li.appendChild(createButton("ui-icon-plusthick", !isDefault && !status, function () {
+                            postMessage("api", "test.lfs.msg.wui.LFSEnable", {layer: this.parentNode.id});
+                        }));
+                        li.appendChild(createButton("ui-icon-minusthick", !isDefault && status, function () {
+                            postMessage("api", "test.lfs.msg.wui.LFSDisable", {layer: this.parentNode.id});
+                        }));
+                        li.appendChild(createButton("ui-icon-arrowthick-1-n", !isDefault && (i > 0), function () {
+                            postMessage("api", "test.lfs.msg.wui.LFSUp", {layer: this.parentNode.id});
+                        }));
+                        li.appendChild(createButton("ui-icon-arrowthick-1-s", !isDefault && (i < data.names.length - 2), function () {
+                            postMessage("api", "test.lfs.msg.wui.LFSDown", {layer: this.parentNode.id});
+                        }));
+
+                        layers.appendChild(li);
+                    }
+                }).start();
+
+                console.log("ask to publish LFS layers");
+                postMessage("api", "test.lfs.msg.wui.LFSAskToPublish", {});
+            });
+        </script>
+    </head>
+    <body>
+        <div id="layers"></div>
+    </body>
+</html>

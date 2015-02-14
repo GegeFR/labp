@@ -16,6 +16,7 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
+import test.utils.WithMeta;
 
 /**
  *
@@ -23,7 +24,7 @@ import java.util.Set;
  */
 public class LayeredFileSystem implements LFSInterface {
 
-    private static final String BASE = "../lfs/";
+    private static final String BASE = "../lfs";
     private static final String DEFAULT = "default";
 
     private static LayeredFileSystem INSTANCE;
@@ -39,97 +40,79 @@ public class LayeredFileSystem implements LFSInterface {
     private final LoggingAdapter _log;
     private final ActorSystem _system;
 
-    private final LinkedList<LFSInterface> _activeLayers;
-    private final LinkedList<LFSInterface> _inactiveLayers;
+    private final LinkedList<WithMeta<LFSInterface, Boolean>> _layers;
 
     private LayeredFileSystem(ActorSystem system) {
         _system = system;
-        _activeLayers = new LinkedList();
-        _inactiveLayers = new LinkedList();
+        _layers = new LinkedList();
         _log = Logging.getLogger(system, this.getClass());
-
-        // at startup there is only one active layer : default
-        _activeLayers.add(new LocalFileSystem(system, new File(BASE + DEFAULT + "/").toURI(), DEFAULT));
 
         File file = new File(BASE);
         File[] layers = file.listFiles((File pathname) -> pathname.isDirectory() && !pathname.getName().contains(" "));
 
+        // fill all layers but DEFAULT
         for (File layer : layers) {
             if (!layer.getName().equals(DEFAULT)) {
-                _inactiveLayers.add(new LocalFileSystem(system, new File(BASE + layer.getName() + "/").toURI(), layer.getName()));
+                _layers.add(new WithMeta(new LocalFileSystem(system, new File(BASE + "/" + layer.getName() + "/").toURI(), layer.getName()), false));
             }
         }
+
+        // at bottom there is one active layer : default
+        _layers.add(new WithMeta(new LocalFileSystem(system, new File(BASE + "/" + DEFAULT + "/").toURI(), DEFAULT), true));
+
     }
 
     public synchronized void enable(String name) {
-        LFSInterface layer = findLayerIn(_inactiveLayers, name);
-        if (null != layer) {
-            _inactiveLayers.remove(layer);
-            _activeLayers.addFirst(layer);
+        WithMeta<LFSInterface, Boolean> pair = getPair(name);
+        if (null != pair) {
+            pair.setMeta(Boolean.TRUE);
         }
     }
 
     public synchronized void disable(String name) {
-        LFSInterface layer = findLayerIn(_activeLayers, name);
-        if (null != layer) {
-            _activeLayers.remove(layer);
-            _inactiveLayers.addFirst(layer);
+        WithMeta<LFSInterface, Boolean> pair = getPair(name);
+        if (null != pair) {
+            pair.setMeta(Boolean.FALSE);
         }
     }
 
     public synchronized void up(String name) {
-        int index = findIndexIn(_activeLayers, name);
-        if (index != -1) {
-            if (index > 0) {
-                Collections.swap(_activeLayers, index, index - 1);
-            }
+        int index = getLayerIndex(name);
+        if (index != -1 && index > 0) {
+            Collections.swap(_layers, index - 1, index);
         }
     }
 
     public synchronized void down(String name) {
-        int index = findIndexIn(_activeLayers, name);
-        _log.info("_activeLayers.size()=" + _activeLayers.size());
-        _log.info("name)=" + name);
-        _log.info("index=" + index);
-        if (index != -1) {
-            if (index < _activeLayers.size() - 1) {
-                Collections.swap(_activeLayers, index, index + 1);
-            }
+        int index = getLayerIndex(name);
+        if (index != -1 && index < _layers.size() - 1) {
+            Collections.swap(_layers, index, index + 1);
         }
     }
 
-    public synchronized LFSInterface getLayer(String name) {
-        if (null == name) {
-            return this;
-        }
-        else {
-            LFSInterface res = findLayerIn(_activeLayers, name);
-            if (null != res) {
-                return res;
-            }
-
-            res = findLayerIn(_inactiveLayers, name);
-            if (null != res) {
-                return res;
-            }
-
-            return null;
-        }
-    }
-
-    private LFSInterface findLayerIn(List<LFSInterface> list, String name) {
-        for (LFSInterface fs : list) {
-            if (fs.getName().equals(name)) {
-                return fs;
+    public synchronized WithMeta<LFSInterface, Boolean> getPair(String name) {
+        for (WithMeta<LFSInterface, Boolean> pair : _layers) {
+            if (pair.getObject().getName().equals(name)) {
+                return pair;
             }
         }
         return null;
     }
 
-    private int findIndexIn(List<LFSInterface> list, String name) {
+    public synchronized LFSInterface getLayer(String name) {
+        WithMeta<LFSInterface, Boolean> pair = getPair(name);
+        if (null != pair) {
+            return pair.getObject();
+        }
+        else {
+            return null;
+        }
+    }
+
+    private int getLayerIndex(String name) {
         int i = 0;
-        for (LFSInterface fs : list) {
-            if (fs.getName().equals(name)) {
+        for (WithMeta<LFSInterface, Boolean> pair : _layers) {
+            if (pair.getObject().getName().equals(name)) {
                 return i;
             }
             i++;
@@ -137,22 +120,8 @@ public class LayeredFileSystem implements LFSInterface {
         return -1;
     }
 
-    public String[] getActiveLayers() {
-        String[] res = new String[_activeLayers.size()];
-        int i = 0;
-        for (LFSInterface fs : _activeLayers) {
-            res[i++] = fs.getName();
-        }
-        return res;
-    }
-
-    public String[] getInactiveLayers() {
-        String[] res = new String[_inactiveLayers.size()];
-        int i = 0;
-        for (LFSInterface fs : _inactiveLayers) {
-            res[i++] = fs.getName();
-        }
-        return res;
+    public List<WithMeta<LFSInterface, Boolean>> getLayers() {
+        return Collections.unmodifiableList(_layers);
     }
 
     @Override
@@ -164,9 +133,11 @@ public class LayeredFileSystem implements LFSInterface {
     public String[] list(String path, boolean recurse) throws Exception {
         Set<String> pathes = new HashSet();
 
-        for (LFSInterface fs : _activeLayers) {
-            String[] list = fs.list(path, recurse);
-            pathes.addAll(Arrays.asList(list));
+        for (WithMeta<LFSInterface, Boolean> pair : _layers) {
+            if (pair.getMeta()) {
+                String[] list = pair.getObject().list(path, recurse);
+                pathes.addAll(Arrays.asList(list));
+            }
         }
 
         String[] res = new String[pathes.size()];
@@ -216,9 +187,11 @@ public class LayeredFileSystem implements LFSInterface {
     }
 
     private synchronized LFSInterface findLayerForPath(String path) throws Exception {
-        for (LFSInterface fs : _activeLayers) {
-            if (fs.exists(path)) {
-                return fs;
+        for (WithMeta<LFSInterface, Boolean> pair : _layers) {
+            if (pair.getMeta()) {
+                if (pair.getObject().exists(path)) {
+                    return pair.getObject();
+                }
             }
         }
         return null;

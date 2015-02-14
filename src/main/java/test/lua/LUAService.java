@@ -57,7 +57,7 @@ public class LUAService extends UntypedActor {
     private String extractName(String name) {
         int index = name.lastIndexOf(ID_SEPARATOR);
 
-        if (-1 != index) {
+        if (-1 == index) {
             throw new RuntimeException("bad name, should not happen");
         }
 

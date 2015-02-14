@@ -5,16 +5,16 @@
  */
 package test.lfs;
 
-import akka.actor.AbstractActor;
 import akka.actor.ActorRef;
 import akka.actor.UntypedActor;
 import akka.contrib.pattern.DistributedPubSubExtension;
 import akka.contrib.pattern.DistributedPubSubMediator;
+import static akka.contrib.pattern.ReliableProxy.active;
 import akka.event.Logging;
 import akka.event.LoggingAdapter;
-import akka.japi.pf.ReceiveBuilder;
-import scala.PartialFunction;
+import java.util.List;
 import test.Constants;
+import test.lfs.impl.LFSInterface;
 import test.lfs.impl.LayeredFileSystem;
 import test.lfs.msg.core.LFSGet;
 import test.lfs.msg.core.LFSList;
@@ -25,6 +25,7 @@ import test.lfs.msg.wui.LFSDown;
 import test.lfs.msg.wui.LFSEnable;
 import test.lfs.msg.wui.LFSLayers;
 import test.lfs.msg.wui.LFSUp;
+import test.utils.WithMeta;
 
 /**
  *
@@ -52,9 +53,6 @@ public class LFSService extends UntypedActor {
         log.info(self() + " :: received class " + m.getClass());
 
         if (m instanceof LFSGet) {
-            onReceive((LFSGet) m);
-        }
-        else if (m instanceof LFSGet) {
             onReceive((LFSGet) m);
         }
         else if (m instanceof LFSSet) {
@@ -132,9 +130,19 @@ public class LFSService extends UntypedActor {
     }
 
     private void doPublish() {
-        String[] active = _filesystem.getActiveLayers();
-        String[] inactive = _filesystem.getInactiveLayers();
-        _distPubSubMediator.tell(new DistributedPubSubMediator.Publish(Constants.TOPIC_WUI, LFSLayers.create(active, inactive)), self());
+        List<WithMeta<LFSInterface, Boolean>> list = _filesystem.getLayers();
+        
+        String[] layers = new String[list.size()];
+        boolean[] active = new boolean[list.size()];
+
+        int i=0;
+        for(WithMeta<LFSInterface, Boolean> entry:list){
+            layers[i] = entry.getObject().getName();
+            active[i] = entry.getMeta();
+            i++;
+        }
+        
+        _distPubSubMediator.tell(new DistributedPubSubMediator.Publish(Constants.TOPIC_WUI, LFSLayers.create(layers, active)), self());
     }
 
 }
