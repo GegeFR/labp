@@ -11,11 +11,13 @@
 
 
         <style type="text/css">
-            body{ font: 62.5% "Trebuchet MS", sans-serif; }
+            body {
+                font-family: "Trebuchet MS", "Helvetica", "Arial",  "Verdana", "sans-serif";
+            }
 
             #layers .ui-selected { background: #F39814; color: white; }
             #layers { list-style-type: none; margin: 0; padding: 0; width: 100%; }
-            #layers li { margin: 3px; padding: 0.4em; font-size: 1.4em; height: 18px; }
+            #layers li { height: 18px; margin: 3px; padding: 2px;}
         </style>
 
         <script type="text/javascript">
@@ -23,6 +25,7 @@
                 var button = document.createElement("button");
                 button.style.float = "right";
                 button.style.height = "100%";
+                button.style.fontSize = "62.5%";
                 if (!show) {
                     button.style.visibility = "hidden";
                 }

@@ -77,7 +77,7 @@ function endsWith(str, suffix) {
     return str.indexOf(suffix, str.length - suffix.length) !== -1;
 }
 
-function domClean(myNode){
+function domClean(myNode) {
     while (myNode.firstChild) {
         myNode.removeChild(myNode.firstChild);
     }
