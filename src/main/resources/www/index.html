@@ -1,383 +1,335 @@
-<!doctype html>
-<html>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
     <head>
-        <meta charset="utf-8">
-        <link href="jquery-ui/jquery-ui.css" rel="stylesheet">
+        <title>layers</title>
+        <link type="text/css" rel="stylesheet" href="jquery-ui/jquery-ui.css" />
 
-        <script src="jquery-ui/external/jquery/jquery.js"></script>
-        <script src="jquery-ui/jquery-ui.js"></script>
+        <script type="text/javascript" src="jquery-ui/external/jquery/jquery.js"></script>
+        <script type="text/javascript" src="jquery-ui/jquery-ui.js"></script>
+        <script type="text/javascript" src="utils.js"></script>
 
-        <script src="jquery-ace/ace/ace.js"></script>
-        <script src="jquery-ace/ace/theme-twilight.js"></script>
-        <script src="jquery-ace/ace/mode-ruby.js"></script>
-        <script src="jquery-ace/jquery-ace.min.js"></script>
+        <link rel="stylesheet" href="jstree/themes/default/style.css" />
+        <script type="text/javascript" src="jstree/jstree.js"></script>
+        <script type="text/javascript" src="ace-min-noconflict/ace.js"></script>
+        <script type="text/javascript" src="ace-min-noconflict/ext-language_tools.js"></script>
 
-        <link rel="stylesheet" href="jstree/themes/default/style.min.css" />
-        <script src="jstree/jstree.js"></script>
-
-        <style>
-            body{
-                font: 62.5% "Trebuchet MS", sans-serif;
+        <style type="text/css">
+            body {
+                font-family: "Trebuchet MS", "Helvetica", "Arial",  "Verdana", "sans-serif";
             }
-
-            div.inline{
-                float:left;
-                background:#555555;
-                border: 5px solid;
+            #editor {
+                width: 100%;
+                margin-left: 2px;
             }
-
-            .layers { width: 100%; }
-
-            // Make each label stack on top of one another.
-            .ui-buttonset-vertical label {
-                display: block;
+            .ui-widget {
+                font-family: "Trebuchet MS", "Helvetica", "Arial",  "Verdana", "sans-serif";
+                font-size: 1.0em;
             }
-            // Handle colliding borders. Here, we're making the bottom border of every label transparent, except for labels with the ui-state-active or ui-state-hover class, or if it's the last label.
-            .ui-buttonset-vertical label:not(:last-of-type):not(.ui-state-hover):not(.ui-state-active) {
-                border-bottom: transparent;
+            #browser {
+                width: 100%;
+                margin-top: 2px;
             }
-            // For lables in the active state, we need to make the top border of the next label transparent.
-            .ui-buttonset-vertical label.ui-state-active + input + label {
-                border-top: transparent;
+            #layers { 
+                width: 100%;
             }
-            // Oddly enough, the above style approach doesn't work for the hover state. So we define this class that's used by our JavaScript hack.
-            .ui-buttonset-vertical label.ui-transparent-border-top {
-                border-top: transparent;
+            .layer {
+                height: 18px;
+                padding: 1px;
             }
-
+            .selectedLayer {
+                background-color: #F39814;
+                color: white;
+            }
         </style>
 
-        <script>
-            function endsWith(str, suffix) {
-                return str.indexOf(suffix, str.length - suffix.length) !== -1;
-            }
-
-            function lfsListToJsTree(data, filter) {
-                var rootText = "/";
-                if (data.request.layer !== undefined) {
-                    rootText = "[" + data.request.layer + "]"
+        <script type="text/javascript">
+            function createLayerButton(icon, show, click) {
+                var button = document.createElement("button");
+                button.style.float = "right";
+                button.style.height = "100%";
+                button.style.fontSize = "62.5%";
+                if (!show) {
+                    button.style.visibility = "hidden";
                 }
-
-                var ret = {
-                    'core': {
-                        'data': [{
-                                'path': "/",
-                                'text': rootText,
-                                'children': [],
-                                'type': "folder",
-                                'state': {
-                                    'opened': true,
-                                    'selected': true
-                                }
-                            }]
-
+                $(button).button({
+                    icons: {
+                        primary: icon
                     },
-                    'plugins': ["types", "wholerow"],
-                    'types': {
-                        'folder': {
-                            'icon': '/icons/folder.png'
-                        },
-                        'file': {
-                            'icon': '/icons/text-x-generic.png'
-                        }
-                    }
-                }
-
-                for (var i in data.paths) {
-                    var path = data.paths[i];
-
-                    if (filter(path) === true) {
-                        var currentPath = "";
-                        var parent = ret.core.data[0];
-                        var elements = path.split("/");
-                        for (var j in elements) {
-                            var element = elements[j];
-                            if (element !== "") {
-                                currentPath = currentPath + "/" + element;
-                                var childIndex = getChildByText(parent, element);
-                                if (-1 === childIndex) {
-                                    child = {
-                                        path: currentPath,
-                                        text: element,
-                                        children: [],
-                                        'type': "file",
-                                    };
-                                    parent.children.push(child);
-                                    parent.type = "folder";
-                                    parent = child;
-                                }
-                                else {
-                                    parent = parent.children[childIndex];
-                                }
-                            }
-                        }
-                    }
-                }
-
-                return ret;
+                    text: false
+                }).click(click);
+                return button;
             }
-
-            function getChildByText(parent, text) {
-                for (var i in parent.children) {
-                    var child = parent.children[i];
-                    if (child.text === text) {
-                        return i;
-                    }
-                }
-                return -1;
-            }
-
-
-            function LongPoller(url, userSuccess) {
-                this.url = url;
-                this.seq = 0;
-                this.userSuccess = userSuccess;
-                this.pollerSuccess = function(event) {
-                    console.log("long polling to " + this.url + "/" + this.seq + " succedded, next url is  " + this.url + "/" + event.seq);
-                    this.seq = event.seq;
-                    this.userSuccess(event.data);
-                }
-
-                this.doPoll = function() {
-                    $.ajax({
-                        context: this,
-                        url: this.url + "/" + this.seq,
-                        dataType: "json",
-                        complete: this.doPoll,
-                        timeout: 30000,
-                        success: this.pollerSuccess
-                    });
-                }
-            }
-
-            function postMessage(servlet, clazz, msg) {
-                postMessage(servlet, clazz, function() {
-                });
-            }
-
-            function postMessage(servlet, clazz, msg, success) {
-                $.ajax({
-                    url: servlet + '/' + clazz,
-                    type: 'POST',
-                    contentType: 'application/json',
-                    data: JSON.stringify(msg),
-                    success: success,
-                    dataType: 'json'
-                });
-            }
-
-            function myButtonSet(id) {
-                $(id).buttonset().addClass("ui-buttonset-vertical")                             // Adds our custom CSS class which changes the orientation.
-                        .find("label").removeClass("ui-corner-left ui-corner-right")            // Remove the corner classes that don't make sense with the new layout.
-                        .on("mouseenter", function(e) {                                         // Hack needed to adjust the top border on the next label during hover.
-                            $(this).next().next().addClass("ui-transparent-border-top");
-                        })
-                        .on("mouseleave", function(e) {
-                            $(this).next().next().removeClass("ui-transparent-border-top");     // Hack needed to adjust the top border on the next label during hover.
-                        })
-                        .filter(":first").addClass("ui-corner-top")                             // Apply proper corner styles.
-                        .end()
-                        .filter(":last").addClass("ui-corner-bottom");
-            }
-
-
-
-
-            // global
-            $(function() {
-                // init components
-                $("#tabs").tabs();
-            });
-
-            // actions
-            $(function() {
-                // init components
-
-                $("#start_lua_normal").button().click(function() {
-                    var selected = $('#lua_browser').jstree().get_selected(true);
-                    for (var i in selected) {
-                        if (selected[i].type === "file") {
-                            var path = selected[i].original.path;
-                            postMessage("api", "test.lua.msg.LUAStart", {path: path, shared: false});
-                        }
-                    }
-                });
-
-                $("#start_lua_shared").button().click(function() {
-                    var selected = $('#lua_browser').jstree().get_selected(true);
-                    for (var i in selected) {
-                        if (selected[i].type === "file") {
-                            var path = selected[i].original.path;
-                            postMessage("api", "test.lua.msg.LUAStart", {path: path, shared: true});
-                        }
-                    }
-                });
-            });
-
 
             // filesystem
-            $(function() {
-                $("#tabs_filesystem").tabs();
-
-                $("#layers_active_up").button().click(function() {
-                    postMessage("api", "test.lfs.msg.wui.LFSUp", {layer: $("#layers_active :radio:checked").attr('id')})
-                });
-                $("#layers_active_down").button().click(function() {
-                    postMessage("api", "test.lfs.msg.wui.LFSDown", {layer: $("#layers_active :radio:checked").attr('id')})
-                });
-                $("#layers_active_disable").button().click(function() {
-                    postMessage("api", "test.lfs.msg.wui.LFSDisable", {layer: $("#layers_active :radio:checked").attr('id')})
-                });
-                $("#layers_active_browse").button().click(function() {
-                    postMessage("api", "test.lfs.msg.core.LFSList", {layer: $("#layers_active :radio:checked").attr('id'), path: "/", recurse: true}, function(data) {
-                        $('#filesystem_browser').jstree("destroy");
-                        $('#filesystem_browser').jstree(lfsListToJsTree(data, function() {
-                            return true;
-                        }));
-                    });
-                });
-                $("#layers_active_browseall").button().click(function() {
-                    postMessage("api", "test.lfs.msg.core.LFSList", {path: "/", recurse: true}, function(data) {
-                        $('#filesystem_browser').jstree("destroy");
-                        $('#filesystem_browser').jstree(lfsListToJsTree(data, function() {
-                            return true;
-                        }));
-                    });
-                });
-
-                $("#layers_inactive_enable").button().click(function() {
-                    postMessage("api", "test.lfs.msg.wui.LFSEnable", {layer: $("#layers_inactive :radio:checked").attr('id')})
-                });
-
-                $("#layers_inactive_browse").button().click(function() {
-                    postMessage("api", "test.lfs.msg.core.LFSList", {layer: $("#layers_inactive :radio:checked").attr('id'), path: "/", recurse: true}, function(data) {
-                        $('#filesystem_browser').jstree("destroy");
-                        $('#filesystem_browser').jstree(lfsListToJsTree(data, function() {
-                            return true;
-                        }));
-                    });
-                });
-
-                $("#layers_inactive_create").button();
-                $("#layers_inactive_clone").button();
-                $("#layers_inactive_delete").button();
-
+            $(document).ready(function () {
+                // poller that receives lfs events
                 console.log("LFS polling started");
-                // poller that receiver lfs events
-                new LongPoller("api/test.lfs.msg.wui.LFSLayers", function(data) {
-                    // get selected buttons
-                    var selected_active = $("#layers_active :radio:checked").attr('id');
-                    var selected_inactive = $("#layers_inactive :radio:checked").attr('id');
+                new Poll("api/test.lfs.msg.wui.LFSLayers", function (data) {
                     // clear buttons
-                    $("#layers_active").empty();
-                    $("#layers_inactive").empty();
+                    var layers = document.getElementById("layers");
+                    domClean(layers);
 
                     // recreate buttons
                     console.log("will recreate buttons");
+                    var i = 0;
+                    for (var i in data.names) {
+                        var id = data.names[i];
+                        var status = data.statuses[i];
+                        console.log("id=" + id + ", status=" + status);
+                        var isDefault = id === "default";
 
-                    for (var i in data.active) {
-                        var id = data.active[i];
-                        $('#layers_active').append('<input type="radio" id="' + id + '" name="radio_layers_active" /><label class="layers" for="' + id + '">' + id + '</label>');
-                    }
+                        var li = document.createElement("div");
+                        li.id = id;
+                        if (status) {
+                            li.className = "layer selectedLayer";
+                        }
+                        else {
+                            li.className = "layer";
+                        }
+                        li.appendChild(document.createTextNode(id));
+                        li.appendChild(createLayerButton("ui-icon-disk", true, function () {
+                            postMessage("api", "test.lfs.msg.wui.LFSExport", {layer: this.parentNode.id}, function(data){
+                                console.debug("TESSSSSSSSSSSSSSST");
+                            });
+                            
+        
+        /*function (response, status, xhr) {
+                                console.debug(response);
+                                console.debug(status);
+                                console.debug(xhr);
 
-                    for (var i in data.inactive) {
-                        var id = data.inactive[i];
-                        $('#layers_inactive').append('<input type="radio" id="' + id + '" name="radio_layers_inactive" /><label class="layers" for="' + id + '">' + id + '</label>');
-                    }
+                                // check for a filename
+                                var filename = "";
+                                var disposition = xhr.getResponseHeader('Content-Disposition');
+                                if (disposition && disposition.indexOf('attachment') !== -1) {
+                                    var filenameRegex = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/;
+                                    var matches = filenameRegex.exec(disposition);
+                                    if (matches != null && matches[1])
+                                        filename = matches[1].replace(/['"]/g, '');
+                                }
 
-                    $("#" + selected_active).attr('checked', true);
-                    $("#" + selected_inactive).attr('checked', true);
+                                var type = xhr.getResponseHeader('Content-Type');
+                                var blob = new Blob([response], {type: type});
 
+                                if (typeof window.navigator.msSaveBlob !== 'undefined') {
+                                    // IE workaround for "HTML7007: One or more blob URLs were revoked by closing the blob for which they were created. These URLs will no longer resolve as the data backing the URL has been freed."
+                                    window.navigator.msSaveBlob(blob, filename);
+                                } else {
+                                    var URL = window.URL || window.webkitURL;
+                                    var downloadUrl = URL.createObjectURL(blob);
 
-                    myButtonSet("#layers_active");
-                    myButtonSet("#layers_inactive");
+                                    if (filename) {
+                                        // use HTML5 a[download] attribute to specify filename
+                                        var a = document.createElement("a");
+                                        // safari doesn't support this yet
+                                        if (typeof a.download === 'undefined') {
+                                            window.location = downloadUrl;
+                                        } else {
+                                            a.href = downloadUrl;
+                                            a.download = filename;
+                                            document.body.appendChild(a);
+                                            a.click();
+                                        }
+                                    } else {
+                                        window.location = downloadUrl;
+                                    }
 
-                    // refresh actions section
-                    postMessage("api", "test.lfs.msg.core.LFSList", {path: "/", recurse: true}, function(data) {
-                        $('#lua_browser').jstree("destroy");
-                        $('#lua_browser').jstree(lfsListToJsTree(data, function(path) {
-                            return endsWith(path.toLowerCase(), ".lua");
+                                    setTimeout(function () {
+                                        URL.revokeObjectURL(downloadUrl);
+                                    }, 100); // cleanup
+                                }
+                            });*/
+                            //postMessage("api", "test.lfs.msg.wui.LFSExport", {layer: this.parentNode.id});
                         }));
-                    });
+                        li.appendChild(createLayerButton("ui-icon-folder-open", true, function () {
+                            postMessage("api", "test.lfs.msg.core.LFSList", {layer: this.parentNode.id, path: "/", recurse: true}, function (data) {
+                                $('#browser').jstree("destroy");
+                                $('#browser').jstree(lfsListToJsTree(data, function () {
+                                    return true;
+                                }));
+                            });
+                        }));
+                        li.appendChild(createLayerButton("ui-icon-plusthick", !isDefault && !status, function () {
+                            postMessage("api", "test.lfs.msg.wui.LFSEnable", {layer: this.parentNode.id});
+                        }));
+                        li.appendChild(createLayerButton("ui-icon-minusthick", !isDefault && status, function () {
+                            postMessage("api", "test.lfs.msg.wui.LFSDisable", {layer: this.parentNode.id});
+                        }));
+                        li.appendChild(createLayerButton("ui-icon-arrowthick-1-n", !isDefault && (i > 0), function () {
+                            postMessage("api", "test.lfs.msg.wui.LFSUp", {layer: this.parentNode.id});
+                        }));
+                        li.appendChild(createLayerButton("ui-icon-arrowthick-1-s", !isDefault && (i < data.names.length - 2), function () {
+                            postMessage("api", "test.lfs.msg.wui.LFSDown", {layer: this.parentNode.id});
+                        }));
 
-                }).doPoll();
-
-                myButtonSet("#layers_active");
-                myButtonSet("#layers_inactive");
+                        layers.appendChild(li);
+                    }
+                }).start();
 
                 console.log("ask to publish LFS layers");
                 postMessage("api", "test.lfs.msg.wui.LFSAskToPublish", {});
 
+                function lfsListToJsTree(data, filter) {
+                    var rootText = "/";
+                    var layer = data.request.layer;
+                    if (data.request.layer !== undefined) {
+                        rootText = "[" + data.request.layer + "]"
+                    }
+
+                    var ret = {
+                        core: {
+                            data: [{
+                                    data: [layer, "/"],
+                                    text: rootText,
+                                    children: [],
+                                    type: "folder",
+                                    state: {
+                                        'opened': true,
+                                        'selected': true
+                                    }
+                                }]
+
+                        },
+                        plugins: ["types", "wholerow", "contextmenu"],
+                        types: {
+                            folder: {
+                                icon: '/icons/folder.png'
+                            },
+                            file: {
+                                icon: '/icons/text-x-generic.png'
+                            }
+                        },
+                        contextmenu: {
+                            show_at_node: false,
+                            items: function (node) {
+                                var tmp = {
+                                    new : {
+                                        label: "new",
+                                        submenu: {
+                                            folder: {
+                                                label: "folder"
+                                            },
+                                            file: {
+                                                label: "file"
+                                            }
+                                        }
+                                    },
+                                    edit: {
+                                        label: "edit",
+                                        action: function (data) {
+                                            openEditor(node);
+                                        }
+                                    },
+                                    delete: {
+                                        label: "delete"
+                                    }
+                                };
+
+                                if (this.get_type(node) === "file") {
+                                    delete tmp.new;
+                                }
+                                else {
+                                    delete tmp.edit;
+                                }
+                                return tmp;
+                            }
+                        }
+                    };
+
+                    for (var i in data.paths) {
+                        var path = data.paths[i];
+                        if (filter(path) === true) {
+                            var currentPath = "";
+                            var parent = ret.core.data[0];
+                            var elements = path.split("/");
+                            for (var j in elements) {
+                                var element = elements[j];
+                                if (element !== "") {
+                                    currentPath = currentPath + "/" + element;
+                                    var childIndex = getChildByText(parent, element);
+                                    if (-1 === childIndex) {
+                                        child = {
+                                            data: [layer, currentPath],
+                                            text: element,
+                                            children: [],
+                                            type: "file"
+                                        };
+                                        parent.children.push(child);
+                                        parent.type = "folder";
+                                        parent = child;
+                                    }
+                                    else {
+                                        parent = parent.children[childIndex];
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    return ret;
+                }
+
+                function getChildByText(parent, text) {
+                    for (var i in parent.children) {
+                        var child = parent.children[i];
+                        if (child.text === text) {
+                            return i;
+                        }
+                    }
+                    return -1;
+                }
+
+                function openEditor(node) {
+                    ace.require("ace/ext/language_tools");
+                    var editor = ace.edit("editor");
+                    editor.$blockScrolling = Infinity;
+                    editor.setOptions({
+                        maxLines: Infinity,
+                        enableBasicAutocompletion: true
+                    });
+
+                    var layer = node.data[0];
+                    var path = node.data[1];
+
+                    var mode;
+                    if (endsWith(path.toLowerCase(), ".xml")) {
+                        mode = "ace/mode/xml";
+                    }
+                    else if (endsWith(path.toLowerCase(), ".lua")) {
+                        mode = "ace/mode/lua";
+                    }
+                    else if (endsWith(path.toLowerCase(), ".properties")) {
+                        mode = "ace/mode/properties";
+                    }
+                    else {
+                        mode = "ace/mode/text";
+                    }
+
+                    editor.getSession().setMode(mode);
+
+                    postMessage("api", "test.lfs.msg.core.LFSGet", {layer: layer, path: path}, function (response) {
+                        console.debug(response);
+                        editor.setValue(bin2String(response.bytes), -1);
+                    });
+                }
             });
-
-
-
         </script>
     </head>
     <body>
-        <div id="tabs">
-            <ul>
-                <li><a href="#tab_filesystem">Filesystem</a></li>
-                <li><a href="#tab_engine">Engine</a></li>
-            </ul>
-            <div id="tab_filesystem">
-                <div id="tabs_filesystem">
-                    <ul>
-                        <li><a href="#tab_filesystem_main">Browse and configure</a></li>
-                    </ul>
-                    <div id="tab_filesystem_main">
-                        <table style="width: 100%">
-                            <tr>
-                                <td width="300" valign="top">
-                            <center>
-                                <h3>Active layers :</h3>
-                                <div id="layers_active"></div>
-                                <br/>
-                                <button id="layers_active_up">up</button>
-                                <button id="layers_active_down">down</button>
-                                <button id="layers_active_disable">disable</button>
-                                <button id="layers_active_browse">browse</button>
-                                <button id="layers_active_browseall">browse all</button>
-                                <br/>
-                                <h3>Inactive layers :</h3>
-                                <div id="layers_inactive"></div>
-                                <br/>
-                                <button id="layers_inactive_enable">enable</button>
-                                <button id="layers_inactive_create">create</button>
-                                <button id="layers_inactive_clone">clone</button>
-                                <button id="layers_inactive_delete">delete</button>
-                                <button id="layers_inactive_browse">browse</button>
-                            </center>
-                            </td>
-                            <td valign="top">
-                                <h3>Browser :</h3>
-                                <div id="filesystem_browser"></div>
-                            </td>
-                            </tr>
-                        </table>
-                        <!-- the clearing element needed by tabs for correct layout -->
-                        <div style="clear:both; float:none"></div>
-                    </div>
-                </div>
-            </div>
-            <div id="tab_engine">
-                <table style="width: 100%">
-                    <tr>
-                        <td width="300" valign="top">
-                            <h3>Lua scripts:</h3>
-                            <div id="lua_browser"></div>                            
-                            <br/>
-                    <center>
-                        <button id="start_lua_normal">normal</button>
-                        <button id="start_lua_shared">shared</button>
-                    </center>
-                    </td>
-                    <td valign="top">
-                        <h3>Running :</h3>
-                    </td>
-                    </tr>
-                </table>
-            </div>
-        </div>
+        <table width="100%">
+            <tr>
+                <td colspan="2">Header</td>
+            </tr>
+            <tr valign="top">
+                <td width="400">
+                    <div id="layers" class="ui-widget-content"></div>
+                    <div id="browser" class="ui-widget-content">Click on the open button to browse a layer.</div>
+                </td>
+                <td>
+                    <div id="editor" class="ui-widget-content">Editor (open from browser's context menu).</div>
+                </td>
+            </tr>
+        </table>
     </body>
 </html>

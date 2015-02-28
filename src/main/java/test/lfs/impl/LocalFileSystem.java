@@ -105,7 +105,6 @@ public class LocalFileSystem implements LFSInterface {
     @Override
     public boolean isFile(String path) {
         File file = new File(toOuterFS(_root, path));
-        log.debug("matched " + path + " to " + file.toURI());
         return file.isFile();
     }
 
@@ -119,6 +118,15 @@ public class LocalFileSystem implements LFSInterface {
     }
 
     private URI toOuterFS(URI root, String innerPath) {
-        return root.resolve("./" + innerPath);
+        try {
+            while(innerPath.startsWith("/")){
+                innerPath = innerPath.substring(1);
+            }
+            
+            return root.resolve(new URI(null, null, innerPath, null));
+        }
+        catch (Exception e) {
+            throw new RuntimeException("should not happen", e);
+        }
     }
 }

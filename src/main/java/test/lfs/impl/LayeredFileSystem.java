@@ -100,12 +100,17 @@ public class LayeredFileSystem implements LFSInterface {
     }
 
     public synchronized LFSInterface getLayer(String name) {
-        WithMeta<LFSInterface, Boolean> pair = getPair(name);
-        if (null != pair) {
-            return pair.getObject();
+        if(null == name){
+            return this;
         }
-        else {
-            return null;
+        else{
+            WithMeta<LFSInterface, Boolean> pair = getPair(name);
+            if (null != pair) {
+                return pair.getObject();
+            }
+            else {
+                throw new RuntimeException("Could not find Layer named " + name);
+            }
         }
     }
 

@@ -58,7 +58,7 @@ function createButtonSet(id) {
 
 
 function postMessage(servlet, clazz, msg) {
-    postMessage(servlet, clazz, function () {
+    postMessage(servlet, clazz, msg, function () {
     });
 }
 
@@ -81,4 +81,36 @@ function domClean(myNode) {
     while (myNode.firstChild) {
         myNode.removeChild(myNode.firstChild);
     }
+}
+
+function bin2String(array) {
+    var result = "";
+    for (var i = 0; i < array.length; i++) {
+        result += String.fromCharCode(parseInt(array[i], 10));
+    }
+    return result;
+}
+
+function postDownload(path, params, method) {
+    method = method || "post"; // Set method to post by default if not specified.
+
+    // The rest of this code assumes you are not using a library.
+    // It can be made less wordy if you use one.
+    var form = document.createElement("form");
+    form.setAttribute("method", method);
+    form.setAttribute("action", path);
+
+    for(var key in params) {
+        if(params.hasOwnProperty(key)) {
+            var hiddenField = document.createElement("input");
+            hiddenField.setAttribute("type", "hidden");
+            hiddenField.setAttribute("name", key);
+            hiddenField.setAttribute("value", params[key]);
+
+            form.appendChild(hiddenField);
+         }
+    }
+
+    document.body.appendChild(form);
+    form.submit();
 }

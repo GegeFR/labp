@@ -118,7 +118,7 @@
 .vakata-context ul {
   list-style: none;
   left: 100%;
-  margin-top: -2.7em;
+  margin-top: -1.6em;
   margin-left: -4px;
 }
 .vakata-context .vakata-context-right ul {
@@ -138,7 +138,7 @@
   width: auto;
   color: black;
   white-space: nowrap;
-  line-height: 2.4em;
+  line-height: 1.5em;
   -moz-text-shadow: 1px 1px 0 white;
   -webkit-text-shadow: 1px 1px 0 white;
   text-shadow: 1px 1px 0 white;
@@ -177,7 +177,7 @@
   min-height: 1px;
   max-height: 1px;
   padding: 0;
-  margin: 0 0 0 2.4em;
+  margin: 0 0 0 1.5em;
   border-left: 1px solid #e0e0e0;
   -moz-text-shadow: 0 0 0 transparent;
   -webkit-text-shadow: 0 0 0 transparent;
@@ -199,22 +199,22 @@
 .vakata-context li > a > i {
   text-decoration: none;
   display: inline-block;
-  width: 2.4em;
-  height: 2.4em;
+  width: 1.5em;
+  height: 1.5em;
   background: transparent;
   margin: 0 0 0 -2em;
   vertical-align: top;
   text-align: center;
-  line-height: 2.4em;
+  line-height: 1.5em;
 }
 .vakata-context li > a > i:empty {
-  width: 2.4em;
-  line-height: 2.4em;
+  width: 1.5em;
+  line-height: 1.5em;
 }
 .vakata-context li > a .vakata-contextmenu-sep {
   display: inline-block;
   width: 1px;
-  height: 2.4em;
+  height: 1.5em;
   background: white;
   margin: 0 0.5em 0 0;
   border-left: 1px solid #e2e3e3;
@@ -237,7 +237,7 @@
   background-repeat: no-repeat;
 }
 .vakata-context-rtl .vakata-context-separator > a {
-  margin: 0 2.4em 0 0;
+  margin: 0 1.5em 0 0;
   border-left: 0;
   border-right: 1px solid #e2e3e3;
 }

@@ -13,6 +13,8 @@ import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
 import java.io.IOException;
 import java.rmi.ServerException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -26,7 +28,9 @@ import test.Constants;
 import test.base.akka.AkkaUtils;
 import test.base.akka.LongPollingEvent;
 import test.core.ClusterServicesRegistry;
+import test.lfs.msg.core.LFSGet;
 import test.lfs.msg.core.LFSList;
+import test.lfs.msg.wui.LFSExport;
 import test.lua.msg.LUAStart;
 
 /**
@@ -136,10 +140,39 @@ public class WUIServlet extends HttpServlet {
             log.info("deserialized message of class " + object.getClass());
 
             // special treatment on special cases
-            if (object instanceof LFSList) {
+            if (object instanceof LFSList || object instanceof LFSGet) {
                 try {
                     ActorSelection lfsService = ClusterServicesRegistry.getInstance().getService(Constants.ROLE_LFS);
-                    response.getWriter().print(_gson.toJson(AkkaUtils.ask(lfsService, object, 5000)));
+                    Object lfsResponse = AkkaUtils.ask(lfsService, object, 5000);
+                    response.getWriter().print(_gson.toJson(lfsResponse));
+                    response.getWriter().close();
+                }
+                catch (Exception e) {
+                    throw new ServletException("forward as ServletException", e);
+                }
+            }
+            else if (object instanceof LFSExport) {
+                try {
+                    ActorSelection lfsService = ClusterServicesRegistry.getInstance().getService(Constants.ROLE_LFS);
+                    LFSExport.Response lfsResponse = (LFSExport.Response) AkkaUtils.ask(lfsService, object, 10000);
+
+                    String filename;
+                    if (null != lfsResponse.request.layer) {
+                        filename = lfsResponse.request.layer;
+                    }
+                    else {
+                        filename = "all";
+                    }
+
+                    Date date = new Date();
+                    SimpleDateFormat sdf = new SimpleDateFormat("yyyy_MM_dd-hh_mm_ss");
+                    filename += "-" + sdf.format(date) + ".zip";
+
+                    response.setContentType("application/zip");
+                    response.setContentLength(lfsResponse.bytes.length);
+                    response.setHeader("Content-Disposition", "attachment;filename=\"" + filename + "\"");
+                    response.getOutputStream().write(lfsResponse.bytes);
+                    response.getOutputStream().close();
                 }
                 catch (Exception e) {
                     throw new ServletException("forward as ServletException", e);
@@ -157,6 +190,10 @@ public class WUIServlet extends HttpServlet {
         }
         catch (ClassNotFoundException | JsonSyntaxException e) {
             log.error(e, "exception happened");
+        }
+        catch (ServletException e) {
+            log.error(e, "exception happened");
+            throw e;
         }
     }
 }
